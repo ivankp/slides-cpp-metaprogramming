@@ -45,6 +45,7 @@
       <li>More powerful than generic programming, <code>std::vector&lt;int&gt;</code></li>
     </ul>
   </section>
+
   <section>
     <h3>Generic Programming</h3>
     <pre><code class="hljs cpp" data-trim data-line-numbers>
@@ -61,8 +62,43 @@
     </code></pre>
     <p>How does one do more with templates than just substitute types?</p>
   </section>
+
+  <section>
+    <h3>Functional programming</h3>
+    <ul style="font-size: 90%;">
+      <li>Function in the mathematical sense: elements of one set are mapped to elements of another.</li>
+      <li>Either domain or range elements can be values or <span style="font-weight: bold;">types</span>.</li>
+      <li>The map itself is constant.</li>
+      <li>No side effects.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h3>What C++ metaprogramming enables us to do</h3>
+    <div style="font-size: 90%;">
+      <ul>
+        <li>Define zero-runtime-overhead maps</li>
+        <ul>
+          <li>(Type, Value) &rarr; (Type, Value)</li>
+          <li>Often less user code overhead than polymorphism</li>
+        </ul>
+        <li>Specify constraints &hArr; enforce isomorphisms</li>
+        <ul>
+          <li>Create code uniformity (fix inconsistent interfaces)</li>
+          <li>Reduce code duplication</li>
+          <li>Specify API requirements as code</li>
+        </ul>
+        <li>Define traits</li>
+        <ul>
+          <li>Ask questions about properties of types</li>
+        </ul>
+      </ul>
+    </div>
+  </section>
+
   <section>
     <h3>The building blocks</h3>
+    <p>Functional programming + templates</p>
     <ul style="font-size: 75%;">
       <li>SFINAE: Substitution Failure Is Not An Error</li>
       <li>Specialization</li>
@@ -178,7 +214,7 @@
 
   <section data-auto-animate>
     <h3>Complete trait with SFINAE</h3>
-    <pre data-id="code-animation"><code class="c++" data-trim data-line-numbers style="font-size: 75%;">
+    <pre data-id="code-animation"><code class="c++" data-trim data-line-numbers style="font-size: 85%;">
         template &lt;typename, typename = void&gt;
         struct is_vector : std::false_type { };
 
@@ -205,7 +241,7 @@
 
   <section data-auto-animate>
     <h3>Complete trait with <code>requires</code> (C++20)</h3>
-    <pre data-id="code-animation"><code class="c++" data-trim data-line-numbers style="font-size: 75%;">
+    <pre data-id="code-animation"><code class="c++" data-trim data-line-numbers style="font-size: 85%;">
         template &lt;typename&gt;
         struct is_vector : std::false_type { };
 
@@ -234,7 +270,14 @@
 <section>
   <section>
     <h3>Type &rarr; Type</h3>
-    <p>Example: Type map</p>
+    <p>Example: Matching data to processors</p>
+    <pre data-id="code-animation"><code class="c++" data-trim data-line-numbers>
+        class BuildingResults { . . . };
+        class EquipmentResults { . . . };
+
+        class BuildingResultsProcessor { . . . };
+        class EquipmentResultsProcessor { . . . };
+    </code></pre>
   </section>
   <section data-auto-animate>
     <h3>Type &rarr; Value</h3>
