@@ -1,40 +1,297 @@
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<head>
+<meta charset="utf-8">
+<title>C++ Template Metaprogramming</title>
+<meta name="description" content="C++20: A highlight of new language and standard library features">
+<meta name="author" content="Ivan Pogrebnyak">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="dist/reset.css">
+<link rel="stylesheet" href="dist/reveal.css">
+<link rel="stylesheet" href="dist/theme/black.css" id="theme">
+<!-- Theme used for syntax highlighting of code -->
+<link rel="stylesheet" href="plugin/highlight/monokai.css">
+<style>
+.reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+    text-transform: none;
+}
+</style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
 
-		<title>reveal.js</title>
+<section>
+  <h1>C++ Template Metaprogramming</h1>
+  <p>
+      <small>Ivan Pogrebnyak</small><br>
+      <small>January 2025</small>
+  </p>
+  <div class="footer" style="font-size: 10pt;">
+      Created with <a href="https://revealjs.com/" target=_blank>reveal.js</a>
+  </div>
+</section>
 
-		<link rel="stylesheet" href="dist/reset.css">
-		<link rel="stylesheet" href="dist/reveal.css">
-		<link rel="stylesheet" href="dist/theme/black.css">
+<section> <!-- Intro -->
+  <section>
+    <p style="margin-bottom: 1em"><b>Metaprogramming</b>: manipulation of code abstractions (e.g. types) as data.</p>
+    <p>The C++ template language:</p>
+    <ul>
+      <li>Turing complete</li>
+      <li>Functional</li>
+      <li>Evaluated at compile time</li>
+      <li>More powerful than generic programming, <code>std::vector&lt;int&gt;</code></li>
+    </ul>
+  </section>
+  <section>
+    <h3>Generic Programming</h3>
+    <pre><code class="hljs cpp" data-trim data-line-numbers>
+      template &lt;typename T&gt;
+      T square(T x) {
+          return x * x;
+      }
 
-		<!-- Theme used for syntax highlighted code -->
-		<link rel="stylesheet" href="plugin/highlight/monokai.css">
-	</head>
-	<body>
-		<div class="reveal">
-			<div class="slides">
-				<section>Slide 1</section>
-				<section>Slide 2</section>
-			</div>
-		</div>
+      template &lt;typename T&gt;
+      struct result {
+          T data;
+          int errorCode;
+      };
+    </code></pre>
+    <p>How does one do more with templates than just substitute types?</p>
+  </section>
+  <section>
+    <h3>The building blocks</h3>
+    <ul style="font-size: 75%;">
+      <li>SFINAE: Substitution Failure Is Not An Error</li>
+      <li>Specialization</li>
+      <li>Tricks</li>
+      <li>Helpful language features</li>
+      <ul>
+        <li><code>requires</code></li>
+        <li><code>constexpr</code>, <code>consteval</code></li>
+        <li><code>using</code></li>
+        <li>Variadic templates</li>
+        <li>Concepts</li>
+      </ul>
+      <li><code>&lt;type_traits</code>&gt;</li>
+    </ul>
+  </section>
+</section>
 
-		<script src="dist/reveal.js"></script>
-		<script src="plugin/notes/notes.js"></script>
-		<script src="plugin/markdown/markdown.js"></script>
-		<script src="plugin/highlight/highlight.js"></script>
-		<script>
-			// More info about initialization & config:
-			// - https://revealjs.com/initialization/
-			// - https://revealjs.com/config/
-			Reveal.initialize({
-				hash: true,
+<section>
+  <section>
+    <h3>Type &rarr; Value</h3>
+    <p>Example: Boolean type trait</p>
+    <p><code>is_vector</code></p>
+  </section>
+  <section data-auto-animate>
+    <h3>Type &rarr; Value</h3>
+    <h4>Using <code>struct</code></h4>
+    <pre data-id="code-animation"><code class="c++" data-trim data-line-numbers>
+        template &lt;typename&gt;
+        struct is_vector {
+            static constexpr bool value = false;
+        };
 
-				// Learn about plugins: https://revealjs.com/plugins/
-				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
-			});
-		</script>
-	</body>
+        template &lt;typename T&gt;
+        struct is_vector&lt; std::vector&lt;T&gt; &gt; {
+            static constexpr bool value = true;
+        };
+
+        static_assert( !is_vector&lt; int &gt;::value );
+        static_assert( !is_vector&lt; std::list  &lt;int&gt; &gt;::value );
+        static_assert(  is_vector&lt; std::vector&lt;int&gt; &gt;::value );
+    </code></pre>
+  </section>
+  <section data-auto-animate>
+    <h3>Type &rarr; Value</h3>
+    <h4>Using <code>struct</code> + <code>&lt;type_traits&gt;</code></h4>
+    <pre data-id="code-animation"><code class="c++" data-trim data-line-numbers>
+        #include &lt;type_traits&gt;
+
+        template &lt;typename&gt;
+        struct is_vector : std::false_type { };
+
+        template &lt;typename T&gt;
+        struct is_vector&lt; std::vector&lt;T&gt; &gt; : std::true_type { };
+
+        static_assert( !is_vector&lt; int &gt;::value );
+        static_assert( !is_vector&lt; std::list  &lt;int&gt; &gt;::value );
+        static_assert(  is_vector&lt; std::vector&lt;int&gt; &gt;::value );
+    </code></pre>
+  </section>
+  <section data-auto-animate>
+    <h3>Type &rarr; Value</h3>
+    <h4>Using variable templates (C++14)</h4>
+    <pre data-id="code-animation"><code class="c++" data-trim data-line-numbers>
+        template &lt;typename&gt;
+        constexpr bool is_vector = false;
+
+        template &lt;typename T&gt;
+        constexpr bool is_vector&lt; std::vector&lt;T&gt; &gt; = true;
+
+        static_assert( !is_vector&lt; int &gt; );
+        static_assert( !is_vector&lt; std::list  &lt;int&gt; &gt; );
+        static_assert(  is_vector&lt; std::vector&lt;int&gt; &gt; );
+    </code></pre>
+  </section>
+  <section data-auto-animate>
+    <h3>Type &rarr; Value</h3>
+    <h4>Using <code>constexpr</code> functions</h4>
+    <ul style="font-size: 75%;">
+      <li>No partial specialization for function templates</li>
+      <li>Need to convert between values and types</li>
+      <li>ADL: argument dependent lookup</li>
+      <li>Can combine functional and procedural code with <code>if constexpr</code></li>
+    </ul>
+    <pre data-id="code-animation"><code class="c++" data-trim data-line-numbers style="font-size: 75%;">
+        template &lt;typename T&gt;
+        struct type_const { using type = T; };
+
+        template &lt;typename T&gt;
+        constexpr bool is_vector(type_const&lt;T&gt;) { return false; }
+
+        template &lt;typename T&gt;
+        constexpr bool is_vector(type_const&lt;std::vector&lt;T&gt;&gt;) { return true; }
+
+        static_assert( !is_vector_f(type_const&lt;int&gt;{}) );
+        static_assert( !is_vector_f(type_const&lt;std::list  &lt;int&gt;&gt;{}) );
+        static_assert(  is_vector_f(type_const&lt;std::vector&lt;int&gt;&gt;{}) );
+    </code></pre>
+  </section>
+
+  <section data-auto-animate>
+    <h3>But …</h3>
+    <p>what about the allocator?</p>
+    <pre data-id="code-animation"><code class="c++" data-trim data-line-numbers>
+        namespace std {
+            template &lt;
+                class T,
+                class Allocator = std::allocator&lt;T&gt;
+            &gt; class vector;
+        }
+    </code></pre>
+    <p>what about references?</p>
+  </section>
+
+  <section data-auto-animate>
+    <h3>Complete trait with SFINAE</h3>
+    <pre data-id="code-animation"><code class="c++" data-trim data-line-numbers style="font-size: 75%;">
+        template &lt;typename, typename = void&gt;
+        struct is_vector : std::false_type { };
+
+        template &lt;typename T&gt;
+        struct is_vector&lt; T, std::void_t&lt;
+            typename std::decay_t&lt;T&gt;::value_type,
+            typename std::decay_t&lt;T&gt;::allocator_type
+        &gt; &gt;
+        : std::is_same&lt;
+            std::decay_t&lt;T&gt;,
+            std::vector&lt;
+                typename std::decay_t&lt;T&gt;::value_type,
+                typename std::decay_t&lt;T&gt;::allocator_type
+            &gt;
+        &gt; { };
+
+        static_assert( !is_vector&lt; int &gt; );
+        static_assert( !is_vector&lt; std::list  &lt;int&gt;  &gt; );
+        static_assert(  is_vector&lt; std::vector&lt;int&gt;  &gt; );
+        static_assert(  is_vector&lt; std::vector&lt;int&gt;&amp; &gt; );
+        static_assert(  is_vector&lt; std::vector&lt;int, CustomAllocator&gt; &gt; );
+    </code></pre>
+  </section>
+
+  <section data-auto-animate>
+    <h3>Complete trait with <code>requires</code> (C++20)</h3>
+    <pre data-id="code-animation"><code class="c++" data-trim data-line-numbers style="font-size: 75%;">
+        template &lt;typename&gt;
+        struct is_vector : std::false_type { };
+
+        template &lt;typename T&gt;
+        requires requires {
+            typename std::decay_t&lt;T&gt;::value_type;
+            typename std::decay_t&lt;T&gt;::allocator_type;
+        } struct is_vector&lt;T&gt;
+        : std::is_same&lt;
+            std::decay_t&lt;T&gt;,
+            std::vector&lt;
+                typename std::decay_t&lt;T&gt;::value_type,
+                typename std::decay_t&lt;T&gt;::allocator_type
+            &gt;
+        &gt; { };
+
+        static_assert( !is_vector&lt; int &gt; );
+        static_assert( !is_vector&lt; std::list  &lt;int&gt;  &gt; );
+        static_assert(  is_vector&lt; std::vector&lt;int&gt;  &gt; );
+        static_assert(  is_vector&lt; std::vector&lt;int&gt;&amp; &gt; );
+        static_assert(  is_vector&lt; std::vector&lt;int, CustomAllocator&gt; &gt; );
+    </code></pre>
+  </section>
+</section>
+
+<section>
+  <section>
+    <h3>Type &rarr; Type</h3>
+    <p>Example: Type map</p>
+  </section>
+  <section data-auto-animate>
+    <h3>Type &rarr; Value</h3>
+    <h4>Using specialization</h4>
+    <pre data-id="code-animation"><code class="c++" data-trim data-line-numbers>
+
+    </code></pre>
+  </section>
+</section>
+
+<section>
+  <section>
+    <h3>Value &rarr; Type</h3>
+    <p>Example: <code>enum</code>-based dispatch</p>
+  </section>
+</section>
+
+<section>
+  <section>
+    <h3>Constraints</h3>
+  </section>
+  <section>
+    <h3>Constraints for specialization</h3>
+    <ul>
+      <li>Bringing together non-isomorphic APIs</li>
+    </ul>
+  </section>
+  <section>
+    <h3>Constraints as API specification</h3>
+    <ul>
+      <li>concepts</li>
+    </ul>
+  </section>
+</section>
+
+        </div>
+    </div>
+
+    <script src="dist/reveal.js"></script>
+    <script src="plugin/highlight/highlight.js"></script>
+    <script>
+        // Also available as an ES module, see:
+        // https://revealjs.com/initialization/
+        Reveal.initialize({
+          center: true,
+          controls: true,
+          controlsTutorial: false,
+          hash: true,
+          hideCursorTime: 2000,
+          overview: true,
+          progress: true,
+          slideNumber: false,
+          transition: 'none',
+
+          // Learn about plugins: https://revealjs.com/plugins/
+          plugins: [ RevealHighlight ]
+        });
+    </script>
+</body>
 </html>
